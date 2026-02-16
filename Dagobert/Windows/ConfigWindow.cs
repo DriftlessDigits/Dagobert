@@ -119,6 +119,19 @@ public sealed class ConfigWindow : Window
       ImGui.EndTooltip();
     }
 
+    var vendorPriceFloor = Plugin.Configuration.VendorPriceFloor;
+    if (ImGui.Checkbox("Vendor Price Floor", ref vendorPriceFloor))
+    {
+      Plugin.Configuration.VendorPriceFloor = vendorPriceFloor;
+      Plugin.Configuration.Save();
+    }
+    if (ImGui.IsItemHovered())
+    {
+      ImGui.BeginTooltip();
+      ImGui.SetTooltip("If checked, items will be skipped when the undercut price would be less than what a vendor would pay for them");
+      ImGui.EndTooltip();
+    }
+
     ImGui.Separator();
 
     int currentMBDelay = Plugin.Configuration.GetMBPricesDelayMS;
