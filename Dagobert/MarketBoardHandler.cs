@@ -83,6 +83,15 @@ namespace Dagobert
         else
           price = Math.Max((100 - Plugin.Configuration.UndercutAmount) * (int)currentOfferings.ItemListings[i].PricePerUnit / 100, 1);
 
+        if (Plugin.Configuration.VendorPriceFloor)
+        {
+          var vendorPrice = (int)_items.GetRow(currentOfferings.ItemListings[0].ItemId).PriceLow;
+          if (vendorPrice > 0 && price < vendorPrice)
+          {
+            price = -2; // sentinel: below vendor price floor
+          }
+        }
+
         NewPrice = price;
       }
 

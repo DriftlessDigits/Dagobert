@@ -120,6 +120,26 @@ public static class Communicator
       Svc.Chat.PrintError($"{itemName}: Item ignored because it would cut the price by more than {Plugin.Configuration.MaxUndercutPercentage}%");
   }
 
+  public static void PrintBelowVendorPriceError(string itemName)
+  {
+    if (!Plugin.Configuration.ShowErrorsInChat)
+      return;
+
+    var itemPayload = RawItemNameToItemPayload(itemName);
+
+    if (itemPayload != null)
+    {
+      var seString = new SeStringBuilder()
+          .AddItemLink(itemPayload.ItemId, itemPayload.IsHQ)
+          .AddText($": Item ignored because it would cut the price below vendor price")
+          .Build();
+
+      Svc.Chat.PrintError(seString);
+    }
+    else
+      Svc.Chat.PrintError($"{itemName}: Item ignored because it would cut the price below vendor price");
+  }
+
   public static void PrintRetainerName(string name)
   {
     if (!Plugin.Configuration.ShowRetainerNames)

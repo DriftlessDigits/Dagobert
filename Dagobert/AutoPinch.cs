@@ -503,8 +503,20 @@ namespace Dagobert
           }
           else
           {
-            Svc.Log.Warning("SetNewPrice: No price to set");
-            Communicator.PrintNoPriceToSetError(itemName);
+            switch (_newPrice)
+            {
+              case -2:
+                Communicator.PrintBelowVendorPriceError(itemName);
+                break;
+
+              case -1: //no MB listings found
+              case null:
+              default:
+                Svc.Log.Warning("SetNewPrice: No price to set");
+                Communicator.PrintNoPriceToSetError(itemName);
+                break;
+            }
+            
             ECommons.Automation.Callback.Fire(&retainerSell->AtkUnitBase, true, 1); // cancel
             ui->Close(true);
             return true;
