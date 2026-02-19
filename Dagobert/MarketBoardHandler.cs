@@ -19,6 +19,14 @@ namespace Dagobert
   ///   -1   = no MB listings found (or duplicate request)
   ///   -2   = undercut price is below price floor (vendor or doman enclave)
   ///   -3   = undercut price is below minimum listing price
+  ///
+  /// Multi-batch behavior:
+  ///   The game sends multiple batches of 10 listings per MB query, each with a
+  ///   unique RequestId. The _newRequest flag is only cleared on a SUCCESSFUL price
+  ///   resolution (not on -1 returns). This means if batch 1 has no valid listings
+  ///   (e.g. no HQ matches), the handler stays armed and processes batch 2, 3, etc.
+  ///   until one succeeds. This is especially important for HQ items where the first
+  ///   HQ listing may be well beyond position 10 (observed at position 30+).
   /// </summary>
   internal unsafe sealed class MarketBoardHandler : IDisposable
   {
@@ -88,25 +96,68 @@ namespace Dagobert
           i = currentOfferings.ItemListings.Count; // no listings at all
       }
 
+      // --- Outlier detection: price-by-price gap comparison ---
+      // Only applies to NQ item pricing. HQ items skip outlier detection.
+      // Treats all listings (NQ and HQ) as equals for gap analysis.
+      Svc.Log.Debug($"Outlier check: enabled={Plugin.Configuration.OutlierDetection}, _useHq={_useHq}, _itemHq={_itemHq}, i={i}, count={currentOfferings.ItemListings.Count}");
+      if (Plugin.Configuration.OutlierDetection && !(_useHq && _itemHq))
+      {
+        var searchEnd = Math.Min(currentOfferings.ItemListings.Count, (i + Plugin.Configuration.OutlierSearchWindow));
+        Svc.Log.Debug($"Outlier search: i={i}, searchEnd={searchEnd}, window={Plugin.Configuration.OutlierSearchWindow}, threshold={Plugin.Configuration.OutlierThresholdPercent}%");
+
+        for (var j = i; j + 1 < searchEnd; j++)
+        {
+          var currentPrice = currentOfferings.ItemListings[j].PricePerUnit;
+          var nextPrice = currentOfferings.ItemListings[j + 1].PricePerUnit;
+          var thresholdPrice = nextPrice * Plugin.Configuration.OutlierThresholdPercent / 100f;
+          var isCliff = currentPrice < thresholdPrice;
+
+          Svc.Log.Debug($"Outlier pair [{j}]={currentPrice} vs [{j + 1}]={nextPrice}, threshold={thresholdPrice:F0}, cliff={isCliff}");
+
+          // If current listing is less than threshold% of the next, it's a cliff
+          if (isCliff)
+          {
+            Communicator.PrintOutlierDetected(currentOfferings.ItemListings[0].ItemId, (int)currentPrice, (int)nextPrice);
+            i = j + 1; // skip everything below the cliff
+          }
+        }
+
+        Svc.Log.Debug($"Outlier result: using listing[{i}]={currentOfferings.ItemListings[i].PricePerUnit}");
+
+        // Re-check bounds after skipping outliers
+        if (i >= currentOfferings.ItemListings.Count)
+        {
+          NewPrice = -1;
+          return;
+        }
+      }
+
       // Guard: no matching listing found, or we already processed this batch
+      Svc.Log.Debug($"Guard check: i={i}, count={currentOfferings.ItemListings.Count}, requestId={currentOfferings.RequestId}, lastRequestId={_lastRequestId}");
       if (i >= currentOfferings.ItemListings.Count || currentOfferings.RequestId == _lastRequestId)
       {
+        Svc.Log.Debug("Guard triggered: no matching listing or duplicate batch");
         NewPrice = -1;
         return;
       }
       else
       {
         int price;
+        var listingPrice = (int)currentOfferings.ItemListings[i].PricePerUnit;
+        var isOwnRetainer = !Plugin.Configuration.UndercutSelf && IsOwnRetainer(currentOfferings.ItemListings[i].RetainerId);
+        Svc.Log.Debug($"Price calc: listing[{i}]={listingPrice}, mode={Plugin.Configuration.UndercutMode}, amount={Plugin.Configuration.UndercutAmount}, isOwn={isOwnRetainer}");
 
         // Calculate price based on the selected undercut mode
-        if (!Plugin.Configuration.UndercutSelf && IsOwnRetainer(currentOfferings.ItemListings[i].RetainerId))
-          price = (int)currentOfferings.ItemListings[i].PricePerUnit;  // own listing — keep as-is
+        if (isOwnRetainer)
+          price = listingPrice;  // own listing — keep as-is
         else if (Plugin.Configuration.UndercutMode == UndercutMode.FixedAmount)
-          price = Math.Max((int)currentOfferings.ItemListings[i].PricePerUnit - Plugin.Configuration.UndercutAmount, 1);
+          price = Math.Max(listingPrice - Plugin.Configuration.UndercutAmount, 1);
         else if (Plugin.Configuration.UndercutMode == UndercutMode.Percentage)
-          price = Math.Max((100 - Plugin.Configuration.UndercutAmount) * (int)currentOfferings.ItemListings[i].PricePerUnit / 100, 1);
+          price = Math.Max((100 - Plugin.Configuration.UndercutAmount) * listingPrice / 100, 1);
         else
-          price = (int)currentOfferings.ItemListings[i].PricePerUnit;  // GentlemansMatch — copy price exactly
+          price = listingPrice;  // GentlemansMatch — copy price exactly
+
+        Svc.Log.Debug($"Price result: {price}");
 
         // Price floor checks
         var itemId = currentOfferings.ItemListings[0].ItemId;

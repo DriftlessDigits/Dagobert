@@ -221,6 +221,80 @@ public sealed class ConfigWindow : Window
       ImGui.EndTooltip();
     }
 
+    ImGui.Separator();
+    // --- Outlier Detection ---
+    var outlierDetection = Plugin.Configuration.OutlierDetection;
+    if (ImGui.Checkbox("Outlier Detection", ref outlierDetection))
+    {
+      Plugin.Configuration.OutlierDetection = outlierDetection;
+      Plugin.Configuration.Save();
+      Plugin.AutoPinch.ClearCachedPrices();
+    }
+    ImGui.SameLine();
+    ImGui.TextDisabled("(?)");
+    if (ImGui.IsItemHovered())
+    {
+      ImGui.BeginTooltip();
+      ImGui.SetTooltip("Detect and skip abnormally low bait listings on the market board.\n\n" +
+                       "Compares each listing to the next — if the price jump is too large,\n" +
+                       "the cheap listing is treated as bait and skipped.\n\n" +
+                       "Only applies to NQ items. HQ items skip outlier detection.");
+      ImGui.EndTooltip();
+    }
+    if (Plugin.Configuration.OutlierDetection)
+    {
+      ImGui.BeginGroup();
+      ImGui.Text("Outlier Threshold:");
+      ImGui.SameLine();
+      float threshold = Plugin.Configuration.OutlierThresholdPercent;
+      ImGui.SetNextItemWidth(150);
+      if (ImGui.SliderFloat("##outlierThreshold", ref threshold, 10f, 90f, "%.0f"))
+      {
+        Plugin.Configuration.OutlierThresholdPercent = MathF.Round(threshold);
+        Plugin.Configuration.Save();
+        Plugin.AutoPinch.ClearCachedPrices();
+      }
+      ImGui.SameLine();
+      ImGui.Text("%");
+      ImGui.EndGroup();
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.SetTooltip("A listing is considered bait if its price is less than this percentage\n" +
+                         "of the next listing's price.\n\n" +
+                         "Example at 50%: A listing at 100 gil is bait if the next is 201+ gil.\n\n" +
+                         "Lower = only catch extreme outliers. Higher = more aggressive filtering.");
+        ImGui.EndTooltip();
+      }
+
+      ImGui.BeginGroup();
+      ImGui.Text("Search Window:");
+      ImGui.SameLine();
+      int searchWindow = Plugin.Configuration.OutlierSearchWindow;
+      ImGui.SetNextItemWidth(150);
+      if (ImGui.SliderInt("##outlierSearchWindow", ref searchWindow, 3, 10))
+      {
+        Plugin.Configuration.OutlierSearchWindow = searchWindow;
+        Plugin.Configuration.Save();
+        Plugin.AutoPinch.ClearCachedPrices();
+      }
+      ImGui.SameLine();
+      ImGui.Text("listings");
+      ImGui.EndGroup();
+      ImGui.SameLine();
+      ImGui.TextDisabled("(?)");
+      if (ImGui.IsItemHovered())
+      {
+        ImGui.BeginTooltip();
+        ImGui.SetTooltip("How many of the cheapest listings to evaluate for outlier detection.\n\n" +
+                         "Each listing counts, including duplicates at the same price.\n" +
+                         "Multiple listings at the same low price = market consensus, not bait.\n\n" +
+                         "The market board sends 10 listings per batch.");
+        ImGui.EndTooltip();
+      }
+    }
 
     ImGui.Separator();
     // --- Market Board Timings ---

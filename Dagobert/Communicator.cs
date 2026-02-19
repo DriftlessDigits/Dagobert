@@ -186,6 +186,26 @@ public static class Communicator
       Svc.Chat.PrintError($"{itemName}: Item ignored because it would cut the price below the minimum listing price of {minPrice} gil");
   }
 
+  /// <summary>Informs the user that an outlier listing was detected and skipped.</summary>
+  /// <param name="itemId">The item's row ID from the game data sheet.</param>
+  /// <param name="outlierPrice">The bait listing price that was skipped.</param>
+  /// <param name="nextPrice">The next valid price tier being used instead.</param>
+  public static void PrintOutlierDetected(uint itemId, int outlierPrice, int nextPrice)
+  {
+    if (!Plugin.Configuration.ShowPriceAdjustmentsMessages)
+      return;
+
+    var item = ItemSheet.GetRow(itemId);
+    var itemPayload = new ItemPayload(itemId, false);
+
+    var seString = new SeStringBuilder()
+        .AddItemLink(itemPayload.ItemId, false)
+        .AddText($": Outlier detected — skipping {outlierPrice:N0} gil, using {nextPrice:N0} gil")
+        .Build();
+
+    Svc.Chat.Print(seString);
+  }
+
   /// <summary>Prints the retainer name header when starting to pinch a retainer's items.</summary>
   /// <param name="name">The retainer's display name.</param>
   public static void PrintRetainerName(string name)

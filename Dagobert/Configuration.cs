@@ -77,6 +77,27 @@ public sealed class Configuration : IPluginConfiguration
   /// </summary>
   public int MinimumListingPrice { get; set; } = 0;
 
+  // --- Outlier detection ---
+
+  /// <summary>
+  /// When enabled, detects and skips abnormally low "bait" listings on the MB.
+  /// Uses largest gap detection across the top listings to find suspicious price drops.
+  /// </summary>
+  public bool OutlierDetection { get; set; } = true;
+
+  /// <summary>
+  /// Threshold for outlier detection. A price tier is flagged as bait if its
+  /// price is less than this percentage of the next tier's price.
+  /// Example: 50 means a listing at 100 gil is an outlier if the next tier is 201+ gil.
+  /// </summary>
+  public float OutlierThresholdPercent { get; set; } = 50f;
+
+  /// <summary>
+  /// How many of the cheapest listings to consider when scanning for outliers.
+  /// Smaller = faster and more conservative. Larger = catches deeper cascades.
+  /// </summary>
+  public int OutlierSearchWindow { get; set; } = 5;
+
   // --- Timing ---
 
   /// <summary>Delay before opening the MB price list. Too low = prices fail to load.</summary>
