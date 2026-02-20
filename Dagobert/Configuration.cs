@@ -86,17 +86,18 @@ public sealed class Configuration : IPluginConfiguration
   public bool OutlierDetection { get; set; } = true;
 
   /// <summary>
-  /// Threshold for outlier detection. A price tier is flagged as bait if its
-  /// price is less than this percentage of the next tier's price.
-  /// Example: 50 means a listing at 100 gil is an outlier if the next tier is 201+ gil.
+  /// Threshold for outlier detection. A price cliff is detected when the gap between
+  /// two adjacent listings exceeds this percentage.
+  /// Example: 50 means a listing at 40 gil is bait if the next is 100 gil (60% gap > 50%).
+  /// Higher = more tolerant. Lower = catches smaller gaps.
   /// </summary>
   public float OutlierThresholdPercent { get; set; } = 50f;
 
   /// <summary>
-  /// How many of the cheapest listings to consider when scanning for outliers.
-  /// Smaller = faster and more conservative. Larger = catches deeper cascades.
+  /// How many additional listings past the first to check for a price cliff.
+  /// Range 1–9. A value of 3 means: compare the first listing against the next 3.
   /// </summary>
-  public int OutlierSearchWindow { get; set; } = 5;
+  public int OutlierSearchWindow { get; set; } = 3;
 
   // --- Timing ---
 
@@ -123,6 +124,8 @@ public sealed class Configuration : IPluginConfiguration
   public bool ShowErrorsInChat { get; set; } = true;
 
   public bool ShowPriceAdjustmentsMessages { get; set; } = true;
+
+  public bool ShowOutlierDetectionMessages { get; set; } = true;
 
   public bool ShowRetainerNames { get; set; } = true;
 

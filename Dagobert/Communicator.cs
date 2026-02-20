@@ -192,7 +192,7 @@ public static class Communicator
   /// <param name="nextPrice">The next valid price tier being used instead.</param>
   public static void PrintOutlierDetected(uint itemId, int outlierPrice, int nextPrice)
   {
-    if (!Plugin.Configuration.ShowPriceAdjustmentsMessages)
+    if (!Plugin.Configuration.ShowOutlierDetectionMessages)
       return;
 
     var item = ItemSheet.GetRow(itemId);
@@ -200,7 +200,13 @@ public static class Communicator
 
     var seString = new SeStringBuilder()
         .AddItemLink(itemPayload.ItemId, false)
-        .AddText($": Outlier detected — skipping {outlierPrice:N0} gil, using {nextPrice:N0} gil")
+        .AddText(": ")
+        .AddUiForeground("Outlier detected", 540)
+        .AddText(" — skipping ")
+        .AddUiForeground($"{outlierPrice:N0}", 17)
+        .AddText(" gil, using ")
+        .AddUiForeground($"{nextPrice:N0}", 45)
+        .AddText(" gil")
         .Build();
 
     Svc.Chat.Print(seString);

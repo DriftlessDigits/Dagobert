@@ -99,30 +99,23 @@ namespace Dagobert
       // --- Outlier detection: price-by-price gap comparison ---
       // Only applies to NQ item pricing. HQ items skip outlier detection.
       // Treats all listings (NQ and HQ) as equals for gap analysis.
-      Svc.Log.Debug($"Outlier check: enabled={Plugin.Configuration.OutlierDetection}, _useHq={_useHq}, _itemHq={_itemHq}, i={i}, count={currentOfferings.ItemListings.Count}");
       if (Plugin.Configuration.OutlierDetection && !(_useHq && _itemHq))
       {
-        var searchEnd = Math.Min(currentOfferings.ItemListings.Count, (i + Plugin.Configuration.OutlierSearchWindow));
-        Svc.Log.Debug($"Outlier search: i={i}, searchEnd={searchEnd}, window={Plugin.Configuration.OutlierSearchWindow}, threshold={Plugin.Configuration.OutlierThresholdPercent}%");
+        var searchEnd = Math.Min(currentOfferings.ItemListings.Count, (i + 1 + Plugin.Configuration.OutlierSearchWindow));
 
         for (var j = i; j + 1 < searchEnd; j++)
         {
           var currentPrice = currentOfferings.ItemListings[j].PricePerUnit;
           var nextPrice = currentOfferings.ItemListings[j + 1].PricePerUnit;
-          var thresholdPrice = nextPrice * Plugin.Configuration.OutlierThresholdPercent / 100f;
-          var isCliff = currentPrice < thresholdPrice;
+          var gapPercent = nextPrice > 0 ? (float)(nextPrice - currentPrice) / nextPrice * 100f : 0f;
 
-          Svc.Log.Debug($"Outlier pair [{j}]={currentPrice} vs [{j + 1}]={nextPrice}, threshold={thresholdPrice:F0}, cliff={isCliff}");
-
-          // If current listing is less than threshold% of the next, it's a cliff
-          if (isCliff)
+          // If the price gap exceeds the threshold, it's a cliff
+          if (gapPercent > Plugin.Configuration.OutlierThresholdPercent)
           {
             Communicator.PrintOutlierDetected(currentOfferings.ItemListings[0].ItemId, (int)currentPrice, (int)nextPrice);
             i = j + 1; // skip everything below the cliff
           }
         }
-
-        Svc.Log.Debug($"Outlier result: using listing[{i}]={currentOfferings.ItemListings[i].PricePerUnit}");
 
         // Re-check bounds after skipping outliers
         if (i >= currentOfferings.ItemListings.Count)
@@ -133,10 +126,8 @@ namespace Dagobert
       }
 
       // Guard: no matching listing found, or we already processed this batch
-      Svc.Log.Debug($"Guard check: i={i}, count={currentOfferings.ItemListings.Count}, requestId={currentOfferings.RequestId}, lastRequestId={_lastRequestId}");
       if (i >= currentOfferings.ItemListings.Count || currentOfferings.RequestId == _lastRequestId)
       {
-        Svc.Log.Debug("Guard triggered: no matching listing or duplicate batch");
         NewPrice = -1;
         return;
       }
@@ -145,7 +136,6 @@ namespace Dagobert
         int price;
         var listingPrice = (int)currentOfferings.ItemListings[i].PricePerUnit;
         var isOwnRetainer = !Plugin.Configuration.UndercutSelf && IsOwnRetainer(currentOfferings.ItemListings[i].RetainerId);
-        Svc.Log.Debug($"Price calc: listing[{i}]={listingPrice}, mode={Plugin.Configuration.UndercutMode}, amount={Plugin.Configuration.UndercutAmount}, isOwn={isOwnRetainer}");
 
         // Calculate price based on the selected undercut mode
         if (isOwnRetainer)
@@ -156,8 +146,6 @@ namespace Dagobert
           price = Math.Max((100 - Plugin.Configuration.UndercutAmount) * listingPrice / 100, 1);
         else
           price = listingPrice;  // GentlemansMatch — copy price exactly
-
-        Svc.Log.Debug($"Price result: {price}");
 
         // Price floor checks
         var itemId = currentOfferings.ItemListings[0].ItemId;

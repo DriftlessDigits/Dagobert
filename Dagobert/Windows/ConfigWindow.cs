@@ -223,6 +223,7 @@ public sealed class ConfigWindow : Window
 
     ImGui.Separator();
     // --- Outlier Detection ---
+    ImGui.Text("-- Outlier Detection --");
     var outlierDetection = Plugin.Configuration.OutlierDetection;
     if (ImGui.Checkbox("Outlier Detection", ref outlierDetection))
     {
@@ -235,9 +236,9 @@ public sealed class ConfigWindow : Window
     if (ImGui.IsItemHovered())
     {
       ImGui.BeginTooltip();
-      ImGui.SetTooltip("Detect and skip abnormally low bait listings on the market board.\n\n" +
+      ImGui.SetTooltip("Detect and skip abnormally low price listings on the market board.\n\n" +
                        "Compares each listing to the next — if the price jump is too large,\n" +
-                       "the cheap listing is treated as bait and skipped.\n\n" +
+                       "the cheap listing is treated as an outlier and skipped.\n\n" +
                        "Only applies to NQ items. HQ items skip outlier detection.");
       ImGui.EndTooltip();
     }
@@ -262,10 +263,12 @@ public sealed class ConfigWindow : Window
       if (ImGui.IsItemHovered())
       {
         ImGui.BeginTooltip();
-        ImGui.SetTooltip("A listing is considered bait if its price is less than this percentage\n" +
-                         "of the next listing's price.\n\n" +
-                         "Example at 50%: A listing at 100 gil is bait if the next is 201+ gil.\n\n" +
-                         "Lower = only catch extreme outliers. Higher = more aggressive filtering.");
+        ImGui.SetTooltip("A price plunge is detected when the gap between two listings\n" +
+                         "exceeds this percentage.\n\n" +
+                         "Example at 50%: A listing at 40 gil is bait if the next is 100 gil\n" +
+                         "(60% cheaper = plunge detected).\n\n" +
+                         "Lower = catches smaller gaps, more aggressive.\n" +
+                         "Higher = only catches large gaps, more tolerant.");
         ImGui.EndTooltip();
       }
 
@@ -274,24 +277,25 @@ public sealed class ConfigWindow : Window
       ImGui.SameLine();
       int searchWindow = Plugin.Configuration.OutlierSearchWindow;
       ImGui.SetNextItemWidth(150);
-      if (ImGui.SliderInt("##outlierSearchWindow", ref searchWindow, 3, 10))
+      if (ImGui.SliderInt("##outlierSearchWindow", ref searchWindow, 1, 9))
       {
         Plugin.Configuration.OutlierSearchWindow = searchWindow;
         Plugin.Configuration.Save();
         Plugin.AutoPinch.ClearCachedPrices();
       }
       ImGui.SameLine();
-      ImGui.Text("listings");
+      ImGui.Text("past first");
       ImGui.EndGroup();
       ImGui.SameLine();
       ImGui.TextDisabled("(?)");
       if (ImGui.IsItemHovered())
       {
         ImGui.BeginTooltip();
-        ImGui.SetTooltip("How many of the cheapest listings to evaluate for outlier detection.\n\n" +
-                         "Each listing counts, including duplicates at the same price.\n" +
-                         "Multiple listings at the same low price = market consensus, not bait.\n\n" +
-                         "The market board sends 10 listings per batch.");
+        ImGui.SetTooltip("How many listings past the cheapest to check for an outlier.\n\n" +
+                         "1 = only compare the 1st and 2nd listing.\n" +
+                         "9 = check all 10 listings in the batch.\n\n" +
+                         "Lower = sell fast at market edge.\n" +
+                         "Higher = look deeper, avoid outliers, may sell higher (eventually).");
         ImGui.EndTooltip();
       }
     }
@@ -343,6 +347,10 @@ public sealed class ConfigWindow : Window
       ImGui.EndTooltip();
     }
 
+    ImGui.Separator();
+    // --- Chat Output ---
+    ImGui.Text("-- Chat Output --");
+
     bool chatErrors = Plugin.Configuration.ShowErrorsInChat;
     if (ImGui.Checkbox("Show errors in chat", ref chatErrors))
     {
@@ -372,6 +380,22 @@ public sealed class ConfigWindow : Window
       ImGui.BeginTooltip();
       ImGui.SetTooltip("Show a chat message each time an item's price is adjusted.\n\n" +
                        "Displays the old price, new price, and percentage change with a clickable item link.");
+      ImGui.EndTooltip();
+    }
+
+    bool outlierMessages = Plugin.Configuration.ShowOutlierDetectionMessages;
+    if (ImGui.Checkbox("Show Outlier Detection", ref outlierMessages))
+    {
+      Plugin.Configuration.ShowOutlierDetectionMessages = outlierMessages;
+      Plugin.Configuration.Save();
+    }
+    ImGui.SameLine();
+    ImGui.TextDisabled("(?)");
+    if (ImGui.IsItemHovered())
+    {
+      ImGui.BeginTooltip();
+      ImGui.SetTooltip("Show a chat message when a bait listing is detected and skipped.\n\n" +
+                       "Displays the skipped price and the valid price being used instead.");
       ImGui.EndTooltip();
     }
 
