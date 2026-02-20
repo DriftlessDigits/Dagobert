@@ -77,6 +77,28 @@ public sealed class Configuration : IPluginConfiguration
   /// </summary>
   public int MinimumListingPrice { get; set; } = 0;
 
+  // --- Outlier detection ---
+
+  /// <summary>
+  /// When enabled, detects and skips abnormally low "bait" listings on the MB.
+  /// Uses largest gap detection across the top listings to find suspicious price drops.
+  /// </summary>
+  public bool OutlierDetection { get; set; } = true;
+
+  /// <summary>
+  /// Threshold for outlier detection. A price cliff is detected when the gap between
+  /// two adjacent listings exceeds this percentage.
+  /// Example: 50 means a listing at 40 gil is bait if the next is 100 gil (60% gap > 50%).
+  /// Higher = more tolerant. Lower = catches smaller gaps.
+  /// </summary>
+  public float OutlierThresholdPercent { get; set; } = 50f;
+
+  /// <summary>
+  /// How many additional listings past the first to check for a price cliff.
+  /// Range 1–9. A value of 3 means: compare the first listing against the next 3.
+  /// </summary>
+  public int OutlierSearchWindow { get; set; } = 3;
+
   // --- Timing ---
 
   /// <summary>Delay before opening the MB price list. Too low = prices fail to load.</summary>
@@ -102,6 +124,8 @@ public sealed class Configuration : IPluginConfiguration
   public bool ShowErrorsInChat { get; set; } = true;
 
   public bool ShowPriceAdjustmentsMessages { get; set; } = true;
+
+  public bool ShowOutlierDetectionMessages { get; set; } = true;
 
   public bool ShowRetainerNames { get; set; } = true;
 
