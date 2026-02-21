@@ -112,13 +112,13 @@ public sealed class Configuration : IPluginConfiguration
   public bool EnableJitter { get; set; } = false;
 
   /// <summary>Random ± variance in ms applied to configurable delays. Slider range: 500–1500.</summary>
-  public int JitterMS { get; set; } = 1000;
+  public int JitterMS { get; set; } = 2000;
 
   /// <summary>Delay before opening the MB price list. Too low = prices fail to load.</summary>
-  public int GetMBPricesDelayMS { get; set; } = 4000;
+  public int GetMBPricesDelayMS { get; set; } = 5000;
 
   /// <summary>How long to keep the MB open when fetching prices.</summary>
-  public int MarketBoardKeepOpenMS { get; set; } = 2000;
+  public int MarketBoardKeepOpenMS { get; set; } = 3000;
 
   // --- Hotkeys ---
 

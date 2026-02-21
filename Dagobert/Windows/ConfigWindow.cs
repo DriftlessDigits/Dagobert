@@ -145,10 +145,10 @@ public sealed class ConfigWindow : Window
       ImGui.Text("Max Random Pinch:");
       ImGui.SameLine();
       int maxPinch = Plugin.Configuration.HumanizedMaxPinch;
-      ImGui.SetNextItemWidth(100);
-      if (ImGui.InputInt("##humanizedMaxPinch", ref maxPinch))
+      ImGui.SetNextItemWidth(150);
+      if (ImGui.SliderInt("##humanizedMaxPinch", ref maxPinch, 1, 10))
       {
-        Plugin.Configuration.HumanizedMaxPinch = Math.Clamp(maxPinch, 1, 10);
+        Plugin.Configuration.HumanizedMaxPinch = maxPinch;
         Plugin.Configuration.Save();
       }
       ImGui.SameLine();
@@ -399,7 +399,7 @@ public sealed class ConfigWindow : Window
       ImGui.Text("Timing Jitter (s):");
       ImGui.SameLine();
       ImGui.SetNextItemWidth(150);
-      if (ImGui.SliderFloat("##timingJitter", ref currentJitter, 0.5f, 1.5f, "%.1f"))
+      if (ImGui.SliderFloat("##timingJitter", ref currentJitter, 0.5f, 3.5f, "%.1f"))
       {
         Plugin.Configuration.JitterMS = (int)(currentJitter * 1000);
         Plugin.Configuration.Save();
