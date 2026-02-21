@@ -1,13 +1,13 @@
 {
-  "Author": "SHOEGAZEssb",
+  "Author": "DriftlessDigits",
   "Name": "Dagobert",
-  "Punchline": "Penny pinching to the extreme",
-  "Description": "Automates market board penny pinching",
+  "Punchline": "A gil saved is a gil earned.",
+  "Description": "\"You might say that everythin's for sale here in Ul'dah — as long as you've got the gil.\" — Momodi Modi",
   "ApplicableVersion": "any",
   "Tags": [
     "Utility"
   ],
-  "RepoUrl": "https://github.com/SHOEGAZEssb/Dagobert",
+  "RepoUrl": "https://github.com/DriftlessDigits/Dagobert",
   "InternalName": "Dagobert",
   "IconUrl": "",
   "ImageUrls": [

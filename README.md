@@ -14,7 +14,7 @@ A Dalamud plugin for FFXIV market board management. Fork of [SHOEGAZEssb/Dagober
 This plugin is distributed via custom Dalamud repository. Add the following repo URL in Dalamud Settings > Experimental > Custom Plugin Repositories:
 
 ```
-TBD
+https://raw.githubusercontent.com/DriftlessDigits/DalamudPluginRepo/main/pluginmaster.json
 ```
 
 ### Disclaimer
